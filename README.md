@@ -16,8 +16,20 @@ This repository contains the core management tools and configuration for enablin
    ```
 
 2. **Source the helper functions**:
+
+   **For Bash/Zsh:**
    ```bash
    source .claude/agent-coordination-helpers.sh
+   ```
+
+   **For Fish shell:**
+   ```fish
+   source .claude/agent-coordination-helpers.fish
+   ```
+
+   **Universal (auto-detects shell):**
+   ```bash
+   source .claude/agent-coordination-universal.sh
    ```
 
 3. **Start collaborating**:
@@ -38,12 +50,23 @@ This repository contains the core management tools and configuration for enablin
 agent-collab-management/
 ├── .claude/
 │   ├── settings.json                    # Core coordination configuration
-│   ├── agent-coordination-helpers.sh    # Utility commands
+│   ├── agent-coordination-helpers.sh    # Bash/Zsh utility commands
+│   ├── agent-coordination-helpers.fish  # Fish shell utility commands
+│   ├── agent-coordination-universal.sh  # Universal shell detector
 │   └── COORDINATION.md                  # Detailed documentation
 ├── README.md                           # This file
 ├── .gitignore                          # Git ignore patterns
 └── DEMO.md                            # Simple demonstration
 ```
+
+## 🐚 Shell Support
+
+The coordination system supports multiple shells:
+
+- **Bash** - Use `agent-coordination-helpers.sh`
+- **Zsh** - Use `agent-coordination-helpers.sh` (compatible)
+- **Fish** - Use `agent-coordination-helpers.fish`
+- **Universal** - Use `agent-coordination-universal.sh` (auto-detects)
 
 ## 🔧 Core Features
 

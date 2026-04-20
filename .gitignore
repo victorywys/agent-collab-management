@@ -1,0 +1,9 @@
+# Claude Code settings
+.claude/settings.local.json
+
+# Common development ignores
+.env
+.env.local
+.DS_Store
+node_modules/
+*.log

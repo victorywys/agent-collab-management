@@ -1,0 +1,12 @@
+{
+  "tools": [
+    {"name": "bash", "command": "bash"},
+    {"name": "git", "command": "git"},
+    {"name": "gh", "command": "gh"},
+    {"name": "curl", "command": "curl"},
+    {"name": "mkdir", "command": "mkdir"},
+    {"name": "cp", "command": "cp"},
+    {"name": "echo", "command": "echo"},
+    {"name": "cat", "command": "cat"}
+  ]
+}

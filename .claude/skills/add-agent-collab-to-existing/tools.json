@@ -1,0 +1,18 @@
+{
+  "tools": [
+    {"name": "bash", "command": "bash"},
+    {"name": "git", "command": "git"},
+    {"name": "find", "command": "find"},
+    {"name": "grep", "command": "grep"},
+    {"name": "jq", "command": "jq"},
+    {"name": "curl", "command": "curl"},
+    {"name": "cat", "command": "cat"},
+    {"name": "mkdir", "command": "mkdir"},
+    {"name": "cp", "command": "cp"},
+    {"name": "echo", "command": "echo"},
+    {"name": "date", "command": "date"},
+    {"name": "wc", "command": "wc"},
+    {"name": "head", "command": "head"},
+    {"name": "tail", "command": "tail"}
+  ]
+}

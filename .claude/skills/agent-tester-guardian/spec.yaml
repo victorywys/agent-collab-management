@@ -1,0 +1,26 @@
+name: agent-tester-guardian
+description: Intelligent testing agent that monitors code changes, performs comprehensive testing, validates relevance, and manages selective merging
+triggers:
+  - "start testing agent"
+  - "enable code guardian"
+  - "activate test monitor"
+  - "setup testing automation"
+  - "enable quality control"
+  - "start code reviewer"
+parameters:
+  - name: repo-path
+    description: Path to repository to monitor (defaults to current directory)
+    required: false
+    default: "."
+  - name: test-strictness
+    description: Testing strictness level (strict, standard, lenient)
+    required: false
+    default: standard
+  - name: auto-merge
+    description: Enable automatic merging of approved changes (true/false)
+    required: false
+    default: false
+  - name: notification-level
+    description: Notification verbosity (minimal, standard, verbose)
+    required: false
+    default: standard

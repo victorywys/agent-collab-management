@@ -1,6 +1,6 @@
 # Agent Collab Skills
 
-This directory contains skills and tools for the Agent Collab ecosystem.
+This directory contains Claude Code skills for the Agent Collab ecosystem.
 
 ## Available Skills
 
@@ -9,9 +9,9 @@ This directory contains skills and tools for the Agent Collab ecosystem.
 #### `create-agent-collab-repo`
 **Purpose:** Automatically creates new repositories with agent collaboration system pre-configured
 
-**Usage:**
-```bash
-create-agent-collab-repo <project-name> [project-type] [--github-user USERNAME]
+**Usage:** Available as a Claude Code skill through `/skills` or by calling:
+```
+/create-agent-collab-repo project-name project-type github-user
 ```
 
 **Features:**
@@ -24,77 +24,213 @@ create-agent-collab-repo <project-name> [project-type] [--github-user USERNAME]
 **Project Types:** `generic`, `node`, `python`, `go`, `docs`, `config`
 
 **Example:**
-```bash
-create-agent-collab-repo my-api-service node --github-user victorywys
 ```
+/create-agent-collab-repo my-api-service node victorywys
+```
+
+#### `add-agent-collab-to-existing`
+**Purpose:** Adds comprehensive agent collaboration to existing repositories with advanced task management
+
+**Usage:** Available as a Claude Code skill through `/skills` or by calling:
+```
+/add-agent-collab-to-existing [repo-path] [agent-name] [analyze-depth] [setup-tasks]
+```
+
+**Advanced Features:**
+- 🔍 **Intelligent Repository Analysis** - Understands project type, structure, and purpose
+- 📋 **Advanced Task Management** - Task assignment, deadlines, progress tracking
+- 💬 **Inter-Agent Communication** - Broadcast messages, direct messaging, communication logs
+- 🔄 **Real-Time Monitoring** - Activity monitoring, agent status, file coordination
+- 🤖 **Smart Coordination** - File locking, conflict prevention, automated handoffs
+- 📊 **Analytics & Insights** - Project analytics, agent performance, collaboration patterns
+
+**New Capabilities:**
+1. **Repository Understanding**: Analyzes existing repos to understand their purpose and structure
+2. **Task List Monitoring**: Real-time view of tasks and progress from other agents
+3. **Task Assignment with Deadlines**: Accept tasks and set deadlines for coordination
+4. **Inter-Agent Communication**: Broadcast updates and send direct messages
+
+**Example:**
+```
+/add-agent-collab-to-existing . my-agent standard true
+```
+
+**Available Commands After Setup:**
+- `claude-agents-status` - Overview of agents and tasks
+- `claude-agents-assign <task-id> [deadline]` - Take ownership of tasks
+- `claude-agents-broadcast "message"` - Send message to all agents
+- `claude-agents-dm <agent> "message"` - Direct message to specific agent
+- `claude-agents-monitor` - Real-time activity monitoring
+- `claude-agents-analyze` - Project analysis and information
+
+### 🛡️ Quality Assurance
+
+#### `agent-tester-guardian`
+**Purpose:** Intelligent testing agent that monitors code changes, performs comprehensive testing, and manages selective merging
+
+**Usage:** Available as a Claude Code skill through `/skills` or by calling:
+```
+/agent-tester-guardian [repo-path] [test-strictness] [auto-merge] [notification-level]
+```
+
+**Advanced Testing Capabilities:**
+- 🔍 **Intelligent Code Monitoring** - Real-time commit detection and analysis
+- 🧪 **Comprehensive Multi-Language Testing** - Node.js, Python, Go, Rust support
+- 📊 **Repository Relevance Validation** - Ensures changes align with project goals
+- 🤖 **AI-Powered Quality Assessment** - Intelligent scoring and feedback generation
+- 🔄 **Selective Merge Management** - Automated approval/rejection with detailed reasoning
+- 💬 **Inter-Agent Communication** - Broadcasts test results and feedback to team
+- 📈 **Analytics & Reporting** - Detailed test reports and quality metrics
+
+**Guardian Features:**
+1. **Real-Time Monitoring**: Automatically detects new commits and queues them for testing
+2. **Comprehensive Analysis**: Analyzes code changes, file types, and repository relevance
+3. **Multi-Language Testing**: Supports testing for Node.js, Python, Go, and generic projects
+4. **Intelligent Feedback**: Generates detailed feedback with actionable suggestions
+5. **Quality Scoring**: Provides objective quality scores (0-100) for all changes
+6. **Selective Merging**: Makes merge recommendations based on comprehensive analysis
+
+**Example:**
+```
+/agent-tester-guardian . strict false verbose
+```
+
+**Guardian Commands After Activation:**
+- `guardian-start` - Activate real-time monitoring
+- `guardian-stop` - Deactivate guardian
+- `guardian-status` - View current status and statistics
+- `guardian-test [commit]` - Manually trigger testing
+- `guardian-results [N]` - View recent test results
+
+**Testing Pipeline:**
+1. **Commit Detection** → Monitors git for new commits
+2. **Change Analysis** → Analyzes modified files and impact
+3. **Relevance Validation** → Ensures changes fit repository purpose
+4. **Comprehensive Testing** → Runs language-specific test suites
+5. **Quality Assessment** → Generates scores and feedback
+6. **Merge Decision** → Recommends approve/conditional/reject
+7. **Team Communication** → Broadcasts results to all agents
+
+## Claude Code Skills Structure
+
+Skills are organized as directories containing:
+
+```
+skillname/
+├── spec.yaml      # Skill metadata and parameters
+├── SKILL.md       # Instructions and prompt for Claude
+└── tools.json     # Available tools for the skill
+```
+
+### spec.yaml
+Defines the skill name, description, triggers, and parameters.
+
+### SKILL.md
+Contains the detailed instructions that Claude follows when executing the skill.
+
+### tools.json
+Lists the system tools (bash, git, etc.) that the skill can use.
 
 ## Installation
 
 These skills are part of the agent-collab-management system. To use them:
 
-1. **Clone the management repository:**
+1. **Global installation (recommended):**
    ```bash
-   git clone https://github.com/victorywys/agent-collab-management.git
-   cd agent-collab-management
+   # Create global skills directory
+   mkdir -p ~/.claude/skills
+
+   # Link skills from this repository
+   ln -sf /path/to/agent-collab-management/.claude/skills/create-agent-collab-repo ~/.claude/skills/
    ```
 
-2. **Add skills to your PATH:**
-   ```bash
-   export PATH="$PATH:$(pwd)/.claude/skills"
+2. **Or run directly via Skill tool:**
+   ```
+   Use the Skill tool in Claude Code conversations
    ```
 
-3. **Or run directly:**
-   ```bash
-   ./.claude/skills/create-agent-collab-repo my-project
+3. **Verify installation:**
    ```
+   /skills
+   ```
+   Should show `create-agent-collab-repo` in the skills list.
 
 ## Creating New Skills
 
 To add a new skill to the ecosystem:
 
-1. **Create skill documentation:** `skillname.md`
-2. **Create executable script:** `skillname` (no extension)
-3. **Follow naming convention:** `verb-noun-context` (e.g., `create-agent-collab-repo`)
-4. **Include coordination system integration**
-5. **Add error handling and help text**
-6. **Update this README**
+1. **Create skill directory:** `mkdir skillname`
+2. **Create spec.yaml:** Define metadata and parameters
+3. **Create SKILL.md:** Write Claude instructions
+4. **Create tools.json:** List required tools
+5. **Follow naming convention:** `verb-noun-context` (e.g., `create-agent-collab-repo`)
+6. **Include coordination system integration**
+7. **Add error handling and clear instructions**
+8. **Update this README**
 
-### Skill Template Structure
+### Skill Directory Template Structure
 
-```bash
-#!/bin/bash
+```
+new-skill/
+├── spec.yaml
+├── SKILL.md
+└── tools.json
+```
+
+**spec.yaml example:**
+```yaml
+name: new-skill
+description: Brief description of what the skill does
+triggers:
+  - "relevant phrase"
+  - "another trigger"
+parameters:
+  - name: param1
+    description: Parameter description
+    required: true
+  - name: param2
+    description: Optional parameter
+    required: false
+    default: default_value
+```
+
+**SKILL.md example:**
+```markdown
 # Skill Name
-# Brief description
 
-set -e  # Exit on error
+You are an agent specialized in [specific task].
 
-# Color codes for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+## Task: [Clear Task Description]
 
-print_status() { echo -e "${BLUE}[INFO]${NC} $1"; }
-print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+When the user requests [specific action], follow these steps:
 
-show_usage() {
-    cat << EOF
-Skill Usage Information
-EOF
+## Step 1: [First Step]
+- Clear instructions
+- Specific commands if needed
+
+## Step 2: [Second Step]
+- More instructions
+- Error handling
+
+## Rules
+- NEVER do harmful things
+- ALWAYS validate inputs
+- KEEP output clear and concise
+```
+
+**tools.json example:**
+```json
+{
+  "tools": [
+    {"name": "bash", "command": "bash"},
+    {"name": "git", "command": "git"}
+  ]
 }
-
-main() {
-    # Skill implementation
-    print_success "Skill completed!"
-}
-
-main "$@"
 ```
 
 ## Integration with Claude Code
 
-These skills are designed to work with Claude Code agents. They automatically:
+These skills are designed to work seamlessly with Claude Code agents. They automatically:
 
 - Set up agent coordination systems
 - Enable multi-agent collaboration
@@ -104,21 +240,44 @@ These skills are designed to work with Claude Code agents. They automatically:
 
 ## Future Skills (Roadmap)
 
-- `clone-agent-collab-repo` - Clone and set up existing repos with coordination
-- `add-agent-collab` - Add coordination to existing repositories
+- ✅ ~~`add-agent-collab` - Add coordination to existing repositories~~ **COMPLETED**
+- ✅ ~~`agent-tester-guardian` - Intelligent testing and quality assurance~~ **COMPLETED**
 - `sync-agent-collab` - Synchronize coordination systems across repos
 - `create-agent-collab-workspace` - Set up multi-repo workspaces
 - `deploy-agent-collab` - Deploy projects with coordination intact
+- `agent-performance-analyzer` - Analyze agent collaboration effectiveness
+- `agent-conflict-resolver` - Advanced merge conflict resolution
+- `agent-security-scanner` - Security-focused code analysis
+- `agent-documentation-generator` - Automated documentation updates
 
 ## Contributing
 
 When creating new skills:
 
-1. Test with multiple project types
+1. Test with multiple scenarios
 2. Include comprehensive error handling
 3. Document all parameters and options
 4. Follow the established patterns
 5. Ensure coordination system integration
+6. Write clear, actionable instructions in SKILL.md
+
+## Testing Skills
+
+1. **Install skill locally:**
+   ```bash
+   ln -sf /path/to/skill ~/.claude/skills/
+   ```
+
+2. **Test via Claude Code:**
+   ```
+   /skills
+   /your-skill-name param1 param2
+   ```
+
+3. **Verify functionality:**
+   - Check all parameters work
+   - Verify error handling
+   - Test edge cases
 
 ---
 

@@ -1,0 +1,25 @@
+name: add-agent-collab-to-existing
+description: Add comprehensive agent collaboration system to existing repositories with task management and inter-agent communication
+triggers:
+  - "add agent collaboration to existing repo"
+  - "retrofit with agent collab"
+  - "enable multi-agent on existing project"
+  - "add coordination to repo"
+  - "setup agent collaboration"
+  - "enable agent teamwork"
+parameters:
+  - name: repo-path
+    description: Path to existing repository (defaults to current directory)
+    required: false
+    default: "."
+  - name: agent-name
+    description: Name for this agent (defaults to system-generated)
+    required: false
+  - name: analyze-depth
+    description: Analysis depth (quick, standard, deep)
+    required: false
+    default: standard
+  - name: setup-tasks
+    description: Initialize with task management (true/false)
+    required: false
+    default: true

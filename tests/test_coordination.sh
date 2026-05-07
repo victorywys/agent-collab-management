@@ -94,6 +94,46 @@ echo "▶ search via git notes"
 out=$(claude-agents-search BROADCAST)
 assert_contains "$out" "hello team"    "search finds broadcast in notes"
 
+echo "▶ session disambiguation"
+out=$(env -i HOME="$HOME" PATH="$PATH" USER=alice HOSTNAME=lap1 bash -c "source '$HELPERS_PATH' >/dev/null; _claude_agent_id")
+assert_contains "$out" "claude-alice-lap1" "default agent id uses USER+HOSTNAME"
+out=$(env -i HOME="$HOME" PATH="$PATH" USER=alice HOSTNAME=lap1 CLAUDE_SESSION_ID=auth bash -c "source '$HELPERS_PATH' >/dev/null; _claude_agent_id")
+assert_contains "$out" "claude-alice-lap1-auth" "CLAUDE_SESSION_ID is appended"
+out=$(env -i HOME="$HOME" PATH="$PATH" USER=alice HOSTNAME=lap1 CLAUDE_AGENT_ID=override bash -c "source '$HELPERS_PATH' >/dev/null; _claude_agent_id")
+assert_contains "$out" "override"           "explicit CLAUDE_AGENT_ID wins"
+
+echo "▶ advisory locks"
+mkdir -p .claude/coordination/locks
+LOCK_PATH="$WORK/foo.txt"
+HASH=$(printf %s "$LOCK_PATH" | sha1sum | awk '{print $1}')
+LOCK_FILE=".claude/coordination/locks/$HASH.lock"
+
+# simulate another agent holding a fresh lock
+NOW=$(date +%s)
+{ echo "agent=claude-other"; echo "path=$LOCK_PATH"; echo "ts=2026-05-07T08:00:00Z"; echo "ts_epoch=$NOW"; } > "$LOCK_FILE"
+
+out=$(claude-agents-locks)
+assert_contains "$out" "claude-other"  "locks lists foreign lock"
+assert_contains "$out" "$LOCK_PATH"    "locks lists locked path"
+
+# clearing 'mine' should NOT remove the foreign lock
+claude-agents-locks-clear mine >/dev/null
+[ -f "$LOCK_FILE" ] && { echo "  ✅ locks-clear mine keeps foreign lock"; PASS=$((PASS+1)); } || { echo "  ❌ locks-clear mine should not remove foreign lock"; FAIL=$((FAIL+1)); }
+
+# stale clearing on a fresh lock should NOT remove
+claude-agents-locks-clear stale >/dev/null
+[ -f "$LOCK_FILE" ] && { echo "  ✅ locks-clear stale keeps fresh lock"; PASS=$((PASS+1)); } || { echo "  ❌ locks-clear stale should keep fresh lock"; FAIL=$((FAIL+1)); }
+
+# mark as stale and clear
+{ echo "agent=claude-other"; echo "path=$LOCK_PATH"; echo "ts=2026-05-07T07:00:00Z"; echo "ts_epoch=$((NOW-9999))"; } > "$LOCK_FILE"
+claude-agents-locks-clear stale >/dev/null
+[ ! -f "$LOCK_FILE" ] && { echo "  ✅ locks-clear stale removes stale lock"; PASS=$((PASS+1)); } || { echo "  ❌ locks-clear stale should remove stale lock"; FAIL=$((FAIL+1)); }
+
+# 'all' wipes everything
+{ echo "agent=claude-other"; echo "ts_epoch=$NOW"; } > "$LOCK_FILE"
+claude-agents-locks-clear all >/dev/null
+[ ! -f "$LOCK_FILE" ] && { echo "  ✅ locks-clear all removes everything"; PASS=$((PASS+1)); } || { echo "  ❌ locks-clear all should remove all locks"; FAIL=$((FAIL+1)); }
+
 echo
 echo "─────────────────────────────"
 echo "PASSED: $PASS   FAILED: $FAIL"

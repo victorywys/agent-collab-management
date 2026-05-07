@@ -56,6 +56,12 @@ claude-agents-active
 | `claude-agents-dm <agent-id> <msg>` | Direct message |
 | `claude-agents-inbox` | Broadcasts + DMs to you |
 
+### Locks
+| Command | Description |
+|---------|-------------|
+| `claude-agents-locks` | List active advisory locks |
+| `claude-agents-locks-clear [stale\|mine\|all]` | Drop locks (default `stale`) |
+
 ### Maintenance
 | Command | Description |
 |---------|-------------|
@@ -88,13 +94,30 @@ The system automatically logs these events:
 
 Each agent is automatically identified by:
 ```bash
-CLAUDE_AGENT_ID="claude-${USER}-${HOSTNAME}"
+CLAUDE_AGENT_ID="claude-${USER}-${HOSTNAME}${CLAUDE_SESSION_ID:+-$CLAUDE_SESSION_ID}"
 ```
 
 Examples:
 - `claude-alice-laptop`
 - `claude-bob-server01`
 - `claude-charlie-dev-machine`
+
+### Running multiple agents on the same host
+
+Two Claude sessions on the same machine produce the same default
+`CLAUDE_AGENT_ID` and clash in the coordination log. Disambiguate by exporting
+`CLAUDE_SESSION_ID` before launching each session:
+
+```bash
+# terminal 1
+CLAUDE_SESSION_ID=auth claude
+# terminal 2
+CLAUDE_SESSION_ID=db claude
+```
+
+The helpers and hooks both honor `CLAUDE_SESSION_ID`, so the resulting IDs
+become `claude-alice-laptop-auth` and `claude-alice-laptop-db`. You can also
+override `CLAUDE_AGENT_ID` directly for full control.
 
 ## 🔧 Configuration
 

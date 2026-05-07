@@ -27,6 +27,10 @@ echo "   claude-agents-broadcast <message>"
 echo "   claude-agents-dm <agent-id> <message>"
 echo "   claude-agents-inbox          Messages addressed to you"
 echo
+echo "🔒 Locks:"
+echo "   claude-agents-locks                     List active advisory locks"
+echo "   claude-agents-locks-clear [stale|mine|all]   Clear locks (default stale)"
+echo
 echo "🧹 Maintenance:"
 echo "   claude-agents-cleanup"
 echo
@@ -49,7 +53,7 @@ _claude_coord_init() {
 }
 
 _claude_agent_id() {
-    echo "${CLAUDE_AGENT_ID:-claude-${USER:-agent}-${HOSTNAME:-local}}"
+    echo "${CLAUDE_AGENT_ID:-claude-${USER:-agent}-${HOSTNAME:-local}${CLAUDE_SESSION_ID:+-$CLAUDE_SESSION_ID}}"
 }
 
 _claude_log_event() {
@@ -314,9 +318,65 @@ claude-agents-inbox() {
     grep -E "BROADCAST|to: $me " "$file" 2>/dev/null | tail -50 || echo "   (empty)"
 }
 
+# ---------- locks ----------
+
+claude-agents-locks() {
+    _claude_coord_init
+    local dir
+    dir=$(_claude_coord_dir)/locks
+    mkdir -p "$dir" 2>/dev/null
+    local now ttl
+    now=$(date +%s)
+    ttl=${CLAUDE_LOCK_TTL:-600}
+    echo "🔒 Active advisory locks (TTL ${ttl}s):"
+    local found=0
+    local lock
+    for lock in "$dir"/*.lock; do
+        [ -f "$lock" ] || continue
+        local agent path ts_epoch age stale
+        agent=$(grep '^agent=' "$lock" | cut -d= -f2-)
+        path=$(grep '^path=' "$lock" | cut -d= -f2-)
+        ts_epoch=$(grep '^ts_epoch=' "$lock" | cut -d= -f2-)
+        age=0
+        [ -n "$ts_epoch" ] && age=$((now - ts_epoch))
+        stale=""
+        [ "$age" -ge "$ttl" ] && stale=" (stale)"
+        printf "  %s\n    agent=%s  age=%ss%s\n" "$path" "$agent" "$age" "$stale"
+        found=1
+    done
+    [ $found -eq 0 ] && echo "  (none)"
+}
+
+claude-agents-locks-clear() {
+    _claude_coord_init
+    local dir
+    dir=$(_claude_coord_dir)/locks
+    mkdir -p "$dir" 2>/dev/null
+    local mode=${1:-stale}
+    local now ttl me
+    now=$(date +%s)
+    ttl=${CLAUDE_LOCK_TTL:-600}
+    me=$(_claude_agent_id)
+    local removed=0 lock
+    for lock in "$dir"/*.lock; do
+        [ -f "$lock" ] || continue
+        local agent ts_epoch age
+        agent=$(grep '^agent=' "$lock" | cut -d= -f2-)
+        ts_epoch=$(grep '^ts_epoch=' "$lock" | cut -d= -f2-)
+        age=0; [ -n "$ts_epoch" ] && age=$((now - ts_epoch))
+        case "$mode" in
+            all)   rm -f "$lock"; removed=$((removed+1)) ;;
+            mine)  [ "$agent" = "$me" ] && rm -f "$lock" && removed=$((removed+1)) ;;
+            stale|*) [ "$age" -ge "$ttl" ] && rm -f "$lock" && removed=$((removed+1)) ;;
+        esac
+    done
+    echo "🧹 cleared $removed lock(s) (mode=$mode)"
+}
+
 # Make functions available in current shell
 export -f claude-agents-log claude-agents-active claude-agents-today claude-agents-yesterday
 export -f claude-agents-search claude-agents-stats claude-agents-cleanup
 export -f claude-agents-status claude-agents-monitor claude-agents-analyze
 export -f claude-agents-tasks claude-agents-task-add claude-agents-assign claude-agents-task-done
 export -f claude-agents-broadcast claude-agents-dm claude-agents-inbox
+export -f claude-agents-locks claude-agents-locks-clear

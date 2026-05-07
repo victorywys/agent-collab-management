@@ -17,6 +17,8 @@ echo "💬 Messaging:"
 echo "   claude-agents-broadcast <message>"
 echo "   claude-agents-dm <agent-id> <message>"
 echo "   claude-agents-inbox"
+echo "🔒 Locks:"
+echo "   claude-agents-locks / -clear [stale|mine|all]"
 echo "🧹 Maintenance:"
 echo "   claude-agents-cleanup"
 echo
@@ -205,7 +207,12 @@ function _claude_agent_id
     if set -q CLAUDE_AGENT_ID
         echo $CLAUDE_AGENT_ID
     else
-        echo "claude-"(whoami)"-"(hostname -s 2>/dev/null; or echo local)
+        set -l base "claude-"(whoami)"-"(hostname -s 2>/dev/null; or echo local)
+        if set -q CLAUDE_SESSION_ID
+            echo "$base-$CLAUDE_SESSION_ID"
+        else
+            echo $base
+        end
     end
 end
 
@@ -387,4 +394,65 @@ function claude-agents-inbox
     set -l file (_claude_coord_dir)/messages.log
     echo "📥 Messages for $me (broadcasts + DMs to you):"
     grep -E "BROADCAST|to: $me " $file 2>/dev/null | tail -50; or echo "   (empty)"
+end
+
+# ---------- locks ----------
+
+function claude-agents-locks
+    _claude_coord_init
+    set -l dir (_claude_coord_dir)/locks
+    mkdir -p $dir 2>/dev/null
+    set -l now (date +%s)
+    set -l ttl 600
+    if set -q CLAUDE_LOCK_TTL; set ttl $CLAUDE_LOCK_TTL; end
+    echo "🔒 Active advisory locks (TTL "$ttl"s):"
+    set -l found 0
+    for lock in $dir/*.lock
+        test -f $lock; or continue
+        set -l agent (grep '^agent=' $lock | cut -d= -f2-)
+        set -l path (grep '^path=' $lock | cut -d= -f2-)
+        set -l ts_epoch (grep '^ts_epoch=' $lock | cut -d= -f2-)
+        set -l age 0
+        test -n "$ts_epoch"; and set age (math $now - $ts_epoch)
+        set -l stale ""
+        test $age -ge $ttl; and set stale " (stale)"
+        printf "  %s\n    agent=%s  age=%ss%s\n" $path $agent $age $stale
+        set found 1
+    end
+    test $found -eq 0; and echo "  (none)"
+end
+
+function claude-agents-locks-clear
+    _claude_coord_init
+    set -l dir (_claude_coord_dir)/locks
+    mkdir -p $dir 2>/dev/null
+    set -l mode stale
+    if test (count $argv) -gt 0
+        set mode $argv[1]
+    end
+    set -l now (date +%s)
+    set -l ttl 600
+    if set -q CLAUDE_LOCK_TTL; set ttl $CLAUDE_LOCK_TTL; end
+    set -l me (_claude_agent_id)
+    set -l removed 0
+    for lock in $dir/*.lock
+        test -f $lock; or continue
+        set -l agent (grep '^agent=' $lock | cut -d= -f2-)
+        set -l ts_epoch (grep '^ts_epoch=' $lock | cut -d= -f2-)
+        set -l age 0
+        test -n "$ts_epoch"; and set age (math $now - $ts_epoch)
+        switch $mode
+            case all
+                rm -f $lock; set removed (math $removed + 1)
+            case mine
+                if test "$agent" = "$me"
+                    rm -f $lock; set removed (math $removed + 1)
+                end
+            case '*'
+                if test $age -ge $ttl
+                    rm -f $lock; set removed (math $removed + 1)
+                end
+        end
+    end
+    echo "🧹 cleared $removed lock(s) (mode=$mode)"
 end

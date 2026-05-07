@@ -140,9 +140,10 @@ agent-collab-management/
 
 > **Status note (May 2026):** _Real-time Coordination_, _Task Management_, and
 > _Team Communication_ are implemented today by the helpers below. _Conflict
-> Prevention_ currently logs file-edit events but does not yet enforce advisory
-> locks (Tier 2 work). _Automated Testing_ / _Quality Analytics_ run as a
-> Claude-driven skill, not a background daemon.
+> Prevention_ now writes advisory file locks under
+> `.claude/coordination/locks/` on every Write/Edit and emits a stderr warning
+> if another agent is already editing the same path. _Automated Testing_ /
+> _Quality Analytics_ run as a Claude-driven skill, not a background daemon.
 
 ## 🧰 Helper Commands (Reference)
 
@@ -166,7 +167,24 @@ After `source .claude/agent-coordination-helpers.sh` (bash/zsh) or
 | `claude-agents-broadcast <msg>` | All-agent message |
 | `claude-agents-dm <agent-id> <msg>` | Direct message |
 | `claude-agents-inbox` | Broadcasts + DMs to you |
+| `claude-agents-locks` | List active advisory locks |
+| `claude-agents-locks-clear [stale\|mine\|all]` | Drop locks (default `stale`) |
 | `claude-agents-cleanup` | Trim old coordination data |
+
+### Running multiple agents on one host
+
+Two Claude sessions on the same machine collide on the default agent id.
+Disambiguate by exporting `CLAUDE_SESSION_ID` before launching each session
+(e.g. `CLAUDE_SESSION_ID=auth claude`); both the helpers and the hooks in
+`settings.json` honor it. You can also override `CLAUDE_AGENT_ID` directly.
+
+### Advisory file locks
+
+Pre/Post tool hooks on `Write|Edit` write a lock file at
+`.claude/coordination/locks/<sha1(path)>.lock` containing the editing agent
+and a timestamp. If another agent's lock is fresher than `CLAUDE_LOCK_TTL`
+(default 600 s), the hook prints a warning to stderr; the edit is **not**
+blocked (advisory only). Locks are released after the edit completes.
 
 Shared state lives in `.claude/coordination/` (`tasks.json`, `messages.log`)
 and is checked into git so all agents see the same truth. Per-host advisory

@@ -1,5 +1,9 @@
 # 🤖 Agent Collaboration Management System
 
+<p align="center">
+  <img src="docs/hero.png" alt="Agents collaborating around a shared GitHub state" width="720">
+</p>
+
 A sophisticated multi-agent coordination system for Claude Code agents working collaboratively on software projects with intelligent task management, automated testing, and seamless communication.
 
 ## 🌟 System Overview

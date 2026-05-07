@@ -29,39 +29,39 @@ This directory contains Claude Code skills for the Agent Collab ecosystem.
 ```
 
 #### `add-agent-collab-to-existing`
-**Purpose:** Adds comprehensive agent collaboration to existing repositories with advanced task management
+**Purpose:** Install the multi-agent coordination layer (settings.json hooks,
+helpers, shared task/message state, advisory file locks) into an existing
+repository. Idempotent — safe to re-run for upgrades.
 
-**Usage:** Available as a Claude Code skill through `/skills` or by calling:
+**Usage:** Run from the target repo's root and invoke the skill:
 ```
-/add-agent-collab-to-existing [repo-path] [agent-name] [analyze-depth] [setup-tasks]
-```
-
-**Advanced Features:**
-- 🔍 **Intelligent Repository Analysis** - Understands project type, structure, and purpose
-- 📋 **Advanced Task Management** - Task assignment, deadlines, progress tracking
-- 💬 **Inter-Agent Communication** - Broadcast messages, direct messaging, communication logs
-- 🔄 **Real-Time Monitoring** - Activity monitoring, agent status, file coordination
-- 🤖 **Smart Coordination** - File locking, conflict prevention, automated handoffs
-- 📊 **Analytics & Insights** - Project analytics, agent performance, collaboration patterns
-
-**New Capabilities:**
-1. **Repository Understanding**: Analyzes existing repos to understand their purpose and structure
-2. **Task List Monitoring**: Real-time view of tasks and progress from other agents
-3. **Task Assignment with Deadlines**: Accept tasks and set deadlines for coordination
-4. **Inter-Agent Communication**: Broadcast updates and send direct messages
-
-**Example:**
-```
-/add-agent-collab-to-existing . my-agent standard true
+/add-agent-collab-to-existing
 ```
 
-**Available Commands After Setup:**
-- `claude-agents-status` - Overview of agents and tasks
-- `claude-agents-assign <task-id> [deadline]` - Take ownership of tasks
-- `claude-agents-broadcast "message"` - Send message to all agents
-- `claude-agents-dm <agent> "message"` - Direct message to specific agent
-- `claude-agents-monitor` - Real-time activity monitoring
-- `claude-agents-analyze` - Project analysis and information
+The skill takes no parameters. It clones the latest canonical files from
+github.com/victorywys/agent-collab-management; if offline, it falls back to
+the bundled copies in `assets/` next to its `SKILL.md`.
+
+**What it installs:**
+- `.claude/settings.json` — hooks for sessions, git ops, file locks, notes sync
+- `.claude/COORDINATION.md`
+- `.claude/agent-coordination-helpers.{sh,fish}`
+- `.claude/coordination/{tasks.json,messages.log,locks/,README.md}`
+- `.gitignore` — appends `.claude/coordination/locks/` and a `messages.log` negation
+
+**After install, source the helpers:**
+```bash
+source .claude/agent-coordination-helpers.sh    # bash/zsh
+# or
+source .claude/agent-coordination-helpers.fish  # fish
+```
+
+**Available helpers:**
+- `claude-agents-status` — overview of agents + open tasks
+- `claude-agents-log` / `-active` / `-today` / `-yesterday` / `-search`
+- `claude-agents-tasks` / `-task-add` / `-assign` / `-task-done`
+- `claude-agents-broadcast` / `-dm` / `-inbox`
+- `claude-agents-locks` / `-locks-clear`
 
 ### 🛡️ Quality Assurance
 

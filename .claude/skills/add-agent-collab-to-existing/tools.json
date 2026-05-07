@@ -1,18 +1,18 @@
 {
   "tools": [
-    {"name": "bash", "command": "bash"},
-    {"name": "git", "command": "git"},
-    {"name": "find", "command": "find"},
-    {"name": "grep", "command": "grep"},
-    {"name": "jq", "command": "jq"},
-    {"name": "curl", "command": "curl"},
-    {"name": "cat", "command": "cat"},
-    {"name": "mkdir", "command": "mkdir"},
-    {"name": "cp", "command": "cp"},
-    {"name": "echo", "command": "echo"},
-    {"name": "date", "command": "date"},
-    {"name": "wc", "command": "wc"},
-    {"name": "head", "command": "head"},
-    {"name": "tail", "command": "tail"}
+    {"name": "bash",     "command": "bash"},
+    {"name": "git",      "command": "git"},
+    {"name": "jq",       "command": "jq"},
+    {"name": "sha1sum",  "command": "sha1sum"},
+    {"name": "shasum",   "command": "shasum"},
+    {"name": "mkdir",    "command": "mkdir"},
+    {"name": "cp",       "command": "cp"},
+    {"name": "chmod",    "command": "chmod"},
+    {"name": "cat",      "command": "cat"},
+    {"name": "grep",     "command": "grep"},
+    {"name": "diff",     "command": "diff"},
+    {"name": "mktemp",   "command": "mktemp"},
+    {"name": "realpath", "command": "realpath"},
+    {"name": "date",     "command": "date"}
   ]
 }

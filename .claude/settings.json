@@ -20,7 +20,7 @@
         "statusMessage": "Checking agent coordination log"
       }, {
         "type": "command",
-        "command": "echo \"$(date -Iseconds): SESSION_START | agent: ${CLAUDE_AGENT_ID:-claude-agent} | cwd: $(pwd)\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: session_start | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Agent session started'",
+        "command": "git notes --ref=agent-coordination append -m \"$(date -Iseconds): SESSION_START | agent: ${CLAUDE_AGENT_ID:-claude-agent} | cwd: $(pwd)\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: session_start | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Agent session started'",
         "statusMessage": "Logging session start"
       }]
     }],
@@ -28,7 +28,7 @@
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "echo \"$(date -Iseconds): SESSION_STOP | agent: ${CLAUDE_AGENT_ID:-claude-agent} | cwd: $(pwd)\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: session_stop | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Agent session ended'",
+        "command": "git notes --ref=agent-coordination append -m \"$(date -Iseconds): SESSION_STOP | agent: ${CLAUDE_AGENT_ID:-claude-agent} | cwd: $(pwd)\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: session_stop | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Agent session ended'",
         "statusMessage": "Logging session end"
       }]
     }],
@@ -37,13 +37,20 @@
       "hooks": [{
         "type": "command",
         "if": "Bash(git commit*)",
-        "command": "jq -r '.tool_input.command' | grep -q 'git commit' && echo \"$(date -Iseconds): PRE_COMMIT | agent: ${CLAUDE_AGENT_ID:-claude-agent} | preparing commit\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || true",
+        "command": "jq -r '.tool_input.command' | grep -q 'git commit' && git notes --ref=agent-coordination append -m \"$(date -Iseconds): PRE_COMMIT | agent: ${CLAUDE_AGENT_ID:-claude-agent} | preparing commit\" HEAD 2>/dev/null || true",
         "statusMessage": "Logging pre-commit activity"
       }, {
         "type": "command",
         "if": "Bash(git checkout*)",
-        "command": "jq -r '.tool_input.command' | grep -q 'git checkout.*-b' && echo \"$(date -Iseconds): BRANCH_CREATE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | creating new branch\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || true",
+        "command": "jq -r '.tool_input.command' | grep -q 'git checkout.*-b' && git notes --ref=agent-coordination append -m \"$(date -Iseconds): BRANCH_CREATE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | creating new branch\" HEAD 2>/dev/null || true",
         "statusMessage": "Logging branch creation"
+      }]
+    }, {
+      "matcher": "Write|Edit",
+      "hooks": [{
+        "type": "command",
+        "command": "FILE_PATH=$(jq -r '.tool_input.file_path' 2>/dev/null) && if [[ \"$FILE_PATH\" != *.git/* && \"$FILE_PATH\" != .claude/* ]]; then git notes --ref=agent-coordination append -m \"$(date -Iseconds): FILE_MODIFY_START | agent: ${CLAUDE_AGENT_ID:-claude-agent} | file: $FILE_PATH\" HEAD 2>/dev/null || true; fi",
+        "statusMessage": "Logging file modification start"
       }]
     }],
     "PostToolUse": [{
@@ -51,25 +58,32 @@
       "hooks": [{
         "type": "command",
         "if": "Bash(git commit*)",
-        "command": "if jq -r '.tool_input.command' | grep -q 'git commit'; then COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null) && echo \"$(date -Iseconds): COMMIT_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | hash: $COMMIT_HASH | branch: $(git branch --show-current 2>/dev/null)\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: commit_complete | agent: ${CLAUDE_AGENT_ID:-claude-agent} | hash: $COMMIT_HASH | timestamp: $(date -Iseconds)\"; fi",
+        "command": "if jq -r '.tool_input.command' | grep -q 'git commit'; then COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null) && git notes --ref=agent-coordination append -m \"$(date -Iseconds): COMMIT_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | hash: $COMMIT_HASH | branch: $(git branch --show-current 2>/dev/null)\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: commit_complete | agent: ${CLAUDE_AGENT_ID:-claude-agent} | hash: $COMMIT_HASH | timestamp: $(date -Iseconds)\"; fi",
         "statusMessage": "Logging commit completion"
       }, {
         "type": "command",
         "if": "Bash(git push*)",
-        "command": "if jq -r '.tool_input.command' | grep -q 'git push'; then BRANCH=$(git branch --show-current 2>/dev/null) && echo \"$(date -Iseconds): PUSH_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | branch: $BRANCH\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: push_complete | agent: ${CLAUDE_AGENT_ID:-claude-agent} | branch: $BRANCH | timestamp: $(date -Iseconds)\"; fi",
+        "command": "if jq -r '.tool_input.command' | grep -q 'git push'; then BRANCH=$(git branch --show-current 2>/dev/null) && git notes --ref=agent-coordination append -m \"$(date -Iseconds): PUSH_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | branch: $BRANCH\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: push_complete | agent: ${CLAUDE_AGENT_ID:-claude-agent} | branch: $BRANCH | timestamp: $(date -Iseconds)\"; fi",
         "statusMessage": "Logging push completion"
       }, {
         "type": "command",
         "if": "Bash(git merge*)",
-        "command": "if jq -r '.tool_input.command' | grep -q 'git merge'; then echo \"$(date -Iseconds): MERGE_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | merged into: $(git branch --show-current 2>/dev/null)\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: merge_complete | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\"; fi",
+        "command": "if jq -r '.tool_input.command' | grep -q 'git merge'; then git notes --ref=agent-coordination append -m \"$(date -Iseconds): MERGE_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | merged into: $(git branch --show-current 2>/dev/null)\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: merge_complete | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\"; fi",
         "statusMessage": "Logging merge completion"
+      }]
+    }, {
+      "matcher": "Write|Edit",
+      "hooks": [{
+        "type": "command",
+        "command": "FILE_PATH=$(jq -r '.tool_input.file_path' 2>/dev/null) && if [[ \"$FILE_PATH\" != *.git/* && \"$FILE_PATH\" != .claude/* ]]; then git notes --ref=agent-coordination append -m \"$(date -Iseconds): FILE_MODIFY_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | file: $FILE_PATH\" HEAD 2>/dev/null || true; fi",
+        "statusMessage": "Logging file modification completion"
       }]
     }],
     "TaskCreated": [{
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "echo \"$(date -Iseconds): TASK_CREATED | agent: ${CLAUDE_AGENT_ID:-claude-agent} | task: $(echo '$ARGUMENTS' | jq -r '.subject // \"unknown\"' 2>/dev/null || echo 'unknown')\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: task_created | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Task created'",
+        "command": "git notes --ref=agent-coordination append -m \"$(date -Iseconds): TASK_CREATED | agent: ${CLAUDE_AGENT_ID:-claude-agent} | task: $(echo '$ARGUMENTS' | jq -r '.subject // \"unknown\"' 2>/dev/null || echo 'unknown')\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: task_created | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Task created'",
         "statusMessage": "Logging task creation"
       }]
     }],
@@ -77,24 +91,8 @@
       "matcher": "*",
       "hooks": [{
         "type": "command",
-        "command": "echo \"$(date -Iseconds): TASK_COMPLETED | agent: ${CLAUDE_AGENT_ID:-claude-agent} | task: $(echo '$ARGUMENTS' | jq -r '.subject // \"unknown\"' 2>/dev/null || echo 'unknown')\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: task_completed | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Task completed'",
+        "command": "git notes --ref=agent-coordination append -m \"$(date -Iseconds): TASK_COMPLETED | agent: ${CLAUDE_AGENT_ID:-claude-agent} | task: $(echo '$ARGUMENTS' | jq -r '.subject // \"unknown\"' 2>/dev/null || echo 'unknown')\" HEAD 2>/dev/null || git commit --allow-empty -m \"AGENT_EVENT: task_completed | agent: ${CLAUDE_AGENT_ID:-claude-agent} | timestamp: $(date -Iseconds)\" 2>/dev/null || echo 'Task completed'",
         "statusMessage": "Logging task completion"
-      }]
-    }],
-    "PreToolUse": [{
-      "matcher": "Write|Edit",
-      "hooks": [{
-        "type": "command",
-        "command": "FILE_PATH=$(jq -r '.tool_input.file_path' 2>/dev/null) && if [[ \"$FILE_PATH\" != *.git/* && \"$FILE_PATH\" != .claude/* ]]; then echo \"$(date -Iseconds): FILE_MODIFY_START | agent: ${CLAUDE_AGENT_ID:-claude-agent} | file: $FILE_PATH\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || true; fi",
-        "statusMessage": "Logging file modification start"
-      }]
-    }],
-    "PostToolUse": [{
-      "matcher": "Write|Edit",
-      "hooks": [{
-        "type": "command",
-        "command": "FILE_PATH=$(jq -r '.tool_input.file_path' 2>/dev/null) && if [[ \"$FILE_PATH\" != *.git/* && \"$FILE_PATH\" != .claude/* ]]; then echo \"$(date -Iseconds): FILE_MODIFY_COMPLETE | agent: ${CLAUDE_AGENT_ID:-claude-agent} | file: $FILE_PATH\" | git notes append --ref=agent-coordination HEAD 2>/dev/null || true; fi",
-        "statusMessage": "Logging file modification completion"
       }]
     }]
   }

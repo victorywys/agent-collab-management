@@ -5,23 +5,19 @@
 
 echo "🤖 Claude Multi-Agent Coordination Commands (Fish Shell):"
 echo
-echo "📋 View Recent Agent Activity:"
-echo "   claude-agents-log"
-echo
-echo "👥 Show Active Agents:"
-echo "   claude-agents-active"
-echo
-echo "🌟 Show Agent Activity by Date:"
-echo "   claude-agents-today"
-echo "   claude-agents-yesterday"
-echo
-echo "🔍 Search Agent Events:"
-echo "   claude-agents-search <keyword>"
-echo
-echo "📊 Agent Statistics:"
-echo "   claude-agents-stats"
-echo
-echo "🧹 Clean Old Coordination Data:"
+echo "📋 Activity & Status:"
+echo "   claude-agents-log / -active / -today / -yesterday / -search <kw> / -stats"
+echo "   claude-agents-status / -monitor / -analyze"
+echo "📝 Tasks:"
+echo "   claude-agents-tasks [open|done|mine|all]"
+echo "   claude-agents-task-add <id> <description> [deadline-iso]"
+echo "   claude-agents-assign <id> [deadline-iso]"
+echo "   claude-agents-task-done <id>"
+echo "💬 Messaging:"
+echo "   claude-agents-broadcast <message>"
+echo "   claude-agents-dm <agent-id> <message>"
+echo "   claude-agents-inbox"
+echo "🧹 Maintenance:"
 echo "   claude-agents-cleanup"
 echo
 
@@ -148,11 +144,8 @@ function claude-agents-stats
     echo "📈 Event Types (last 50 events):"
     set temp_file (mktemp)
 
-    # Get event types from commits
-    git log -50 --grep="AGENT_EVENT:" --all --format="%s" 2>/dev/null | grep -o "AGENT_EVENT: [^|]*" | sed 's/AGENT_EVENT: //' | sort | uniq -c | sort -nr >> $temp_file
-
-    # Get event types from notes
-    git notes --ref=agent-coordination show HEAD 2>/dev/null | tail -50 | grep -o ": [A-Z_]*" | sed 's/: //' | sort | uniq -c | sort -nr >> $temp_file
+    git log -50 --grep="AGENT_EVENT:" --all --format="%s" 2>/dev/null | grep -oE "AGENT_EVENT: [a-z_]+" | sed 's/AGENT_EVENT: //' | sort | uniq -c | sort -nr >> $temp_file
+    git notes --ref=agent-coordination show HEAD 2>/dev/null | tail -50 | grep -oE ": [A-Z_]+ \|" | sed -E 's/^: //; s/ \|$//' | sort | uniq -c | sort -nr >> $temp_file
 
     if test -s $temp_file
         head -10 $temp_file
@@ -162,11 +155,8 @@ function claude-agents-stats
     echo "🤖 Most Active Agents:"
     set temp_file2 (mktemp)
 
-    # Get agents from commits
-    git log -50 --grep="AGENT_EVENT:" --all --format="%s" 2>/dev/null | grep -o "agent: [^|]*" | sed 's/agent: //' | sort | uniq -c | sort -nr >> $temp_file2
-
-    # Get agents from notes
-    git notes --ref=agent-coordination show HEAD 2>/dev/null | tail -50 | grep -o "agent: [^|]*" | sed 's/agent: //' | sort | uniq -c | sort -nr >> $temp_file2
+    git log -50 --grep="AGENT_EVENT:" --all --format="%s" 2>/dev/null | grep -oE "agent: [^|]+" | sed 's/agent: //; s/ *$//' | sort | uniq -c | sort -nr >> $temp_file2
+    git notes --ref=agent-coordination show HEAD 2>/dev/null | tail -50 | grep -oE "agent: [^|]+" | sed 's/agent: //; s/ *$//' | sort | uniq -c | sort -nr >> $temp_file2
 
     if test -s $temp_file2
         head -5 $temp_file2
@@ -197,11 +187,204 @@ function claude-agents-cleanup
     rm -f /tmp/keep_commits.txt $notes_file
 end
 
-# Make functions available globally in Fish
-funcsave claude-agents-log
-funcsave claude-agents-active
-funcsave claude-agents-today
-funcsave claude-agents-yesterday
-funcsave claude-agents-search
-funcsave claude-agents-stats
-funcsave claude-agents-cleanup
+# ---------- internal helpers ----------
+
+function _claude_coord_dir
+    set -l root (git rev-parse --show-toplevel 2>/dev/null; or echo $PWD)
+    echo "$root/.claude/coordination"
+end
+
+function _claude_coord_init
+    set -l dir (_claude_coord_dir)
+    mkdir -p "$dir/locks" 2>/dev/null
+    test -f "$dir/tasks.json"   ; or echo '{"tasks": []}' > "$dir/tasks.json"
+    test -f "$dir/messages.log" ; or touch "$dir/messages.log"
+end
+
+function _claude_agent_id
+    if set -q CLAUDE_AGENT_ID
+        echo $CLAUDE_AGENT_ID
+    else
+        echo "claude-"(whoami)"-"(hostname -s 2>/dev/null; or echo local)
+    end
+end
+
+function _claude_log_event
+    set -l kind $argv[1]
+    set -e argv[1]
+    set -l ts (date -Iseconds)
+    set -l agent (_claude_agent_id)
+    git notes --ref=agent-coordination append -m "$ts: $kind | agent: $agent | $argv" HEAD 2>/dev/null; or true
+end
+
+# ---------- new: status / monitor / analyze ----------
+
+function claude-agents-status
+    _claude_coord_init
+    echo "🤖 Agent Coordination Status"
+    echo "════════════════════════════"
+    echo "You: "(_claude_agent_id)
+    echo
+    echo "Active agents (last 24h):"
+    claude-agents-active
+    echo
+    echo "Open tasks:"
+    claude-agents-tasks open
+end
+
+function claude-agents-monitor
+    echo "🔭 Live coordination monitor (Ctrl-C to exit)"
+    set -l last ""
+    while true
+        set -l now (git notes --ref=agent-coordination show HEAD 2>/dev/null | tail -5)
+        if test "$now" != "$last"
+            echo "── "(date '+%H:%M:%S')" ──"
+            echo $now
+            set last $now
+        end
+        sleep 5
+    end
+end
+
+function claude-agents-analyze
+    set -l root (git rev-parse --show-toplevel 2>/dev/null; or echo $PWD)
+    echo "🔍 Repository: "(basename $root)
+    echo "Path: $root"
+    if test -f "$root/package.json"
+        echo "Type: node"
+    else if test -f "$root/pyproject.toml" -o -f "$root/requirements.txt"
+        echo "Type: python"
+    else if test -f "$root/go.mod"
+        echo "Type: go"
+    else if test -f "$root/Cargo.toml"
+        echo "Type: rust"
+    else
+        echo "Type: generic"
+    end
+    echo "Branch: "(git -C $root branch --show-current 2>/dev/null)
+    echo "Tracked files: "(git -C $root ls-files 2>/dev/null | wc -l)
+end
+
+# ---------- new: tasks ----------
+
+function claude-agents-tasks
+    _claude_coord_init
+    set -l filter all
+    if test (count $argv) -gt 0
+        set filter $argv[1]
+    end
+    set -l file (_claude_coord_dir)/tasks.json
+    if not type -q jq
+        echo "jq required for task commands" >&2; return 1
+    end
+    set -l me (_claude_agent_id)
+    echo "📝 Tasks ($filter):"
+    switch $filter
+        case open
+            jq -r '.tasks[] | select(.status=="open") | "  [\(.id)] \(.description) — assignee: \(.assignee // "—") deadline: \(.deadline // "—")"' $file
+        case done
+            jq -r '.tasks[] | select(.status=="done") | "  [\(.id)] \(.description) — done by \(.assignee // "—")"' $file
+        case mine
+            jq -r --arg me "$me" '.tasks[] | select(.assignee==$me) | "  [\(.id)] \(.description) — \(.status)"' $file
+        case '*'
+            jq -r '.tasks[] | "  [\(.id)] (\(.status)) \(.description) — assignee: \(.assignee // "—")"' $file
+    end
+end
+
+function claude-agents-task-add
+    if test (count $argv) -lt 2
+        echo "Usage: claude-agents-task-add <id> <description> [deadline-iso]"; return 1
+    end
+    _claude_coord_init
+    set -l id $argv[1]; set -l desc $argv[2]
+    set -l deadline ""
+    if test (count $argv) -ge 3
+        set deadline $argv[3]
+    end
+    set -l file (_claude_coord_dir)/tasks.json
+    if jq -e --arg id "$id" '.tasks[] | select(.id==$id)' $file >/dev/null
+        echo "❌ Task $id already exists"; return 1
+    end
+    set -l tmp (mktemp)
+    jq --arg id "$id" --arg desc "$desc" --arg deadline "$deadline" --arg ts (date -Iseconds) \
+        '.tasks += [{id:$id, description:$desc, deadline:$deadline, status:"open", assignee:null, created_at:$ts}]' \
+        $file > $tmp; and mv $tmp $file
+    _claude_log_event TASK_ADDED "task: $id | description: $desc"
+    echo "✅ Task $id added"
+end
+
+function claude-agents-assign
+    if test (count $argv) -eq 0
+        echo "Usage: claude-agents-assign <task-id> [deadline-iso]"; return 1
+    end
+    _claude_coord_init
+    set -l id $argv[1]
+    set -l deadline ""
+    if test (count $argv) -ge 2
+        set deadline $argv[2]
+    end
+    set -l file (_claude_coord_dir)/tasks.json
+    set -l me (_claude_agent_id)
+    if not jq -e --arg id "$id" '.tasks[] | select(.id==$id)' $file >/dev/null
+        echo "❌ Task $id not found"; return 1
+    end
+    set -l tmp (mktemp)
+    jq --arg id "$id" --arg me "$me" --arg deadline "$deadline" \
+        '(.tasks[] | select(.id==$id)) |= (.assignee=$me | (if $deadline=="" then . else .deadline=$deadline end))' \
+        $file > $tmp; and mv $tmp $file
+    _claude_log_event TASK_ASSIGNED "task: $id | deadline: $deadline"
+    echo "✅ $me assigned to $id"
+end
+
+function claude-agents-task-done
+    if test (count $argv) -eq 0
+        echo "Usage: claude-agents-task-done <task-id>"; return 1
+    end
+    _claude_coord_init
+    set -l id $argv[1]
+    set -l file (_claude_coord_dir)/tasks.json
+    set -l tmp (mktemp)
+    jq --arg id "$id" --arg ts (date -Iseconds) \
+        '(.tasks[] | select(.id==$id)) |= (.status="done" | .completed_at=$ts)' \
+        $file > $tmp; and mv $tmp $file
+    _claude_log_event TASK_DONE "task: $id"
+    echo "✅ Task $id marked done"
+end
+
+# ---------- new: messaging ----------
+
+function claude-agents-broadcast
+    if test (count $argv) -eq 0
+        echo "Usage: claude-agents-broadcast <message>"; return 1
+    end
+    _claude_coord_init
+    set -l me (_claude_agent_id)
+    set -l ts (date -Iseconds)
+    set -l msg "$argv"
+    echo "$ts | BROADCAST | from: $me | $msg" >> (_claude_coord_dir)/messages.log
+    _claude_log_event BROADCAST "$msg"
+    echo "📣 broadcast sent"
+end
+
+function claude-agents-dm
+    if test (count $argv) -lt 2
+        echo "Usage: claude-agents-dm <agent-id> <message>"; return 1
+    end
+    _claude_coord_init
+    set -l to $argv[1]
+    set -e argv[1]
+    set -l msg "$argv"
+    set -l me (_claude_agent_id)
+    set -l ts (date -Iseconds)
+    echo "$ts | DM | from: $me | to: $to | $msg" >> (_claude_coord_dir)/messages.log
+    _claude_log_event DM "to: $to | $msg"
+    echo "✉️  dm to $to sent"
+end
+
+function claude-agents-inbox
+    _claude_coord_init
+    set -l me (_claude_agent_id)
+    set -l file (_claude_coord_dir)/messages.log
+    echo "📥 Messages for $me (broadcasts + DMs to you):"
+    grep -E "BROADCAST|to: $me " $file 2>/dev/null | tail -50; or echo "   (empty)"
+end

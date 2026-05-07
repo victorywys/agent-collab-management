@@ -29,15 +29,37 @@ claude-agents-active
 
 ## 📋 Available Commands
 
+### Activity & status
 | Command | Description |
 |---------|-------------|
-| `claude-agents-log` | Show recent agent activity (last 20 events) |
-| `claude-agents-active` | List agents active in last 24 hours |
-| `claude-agents-today` | Show today's agent events |
-| `claude-agents-yesterday` | Show yesterday's agent events |
-| `claude-agents-search <keyword>` | Search agent events for specific terms |
-| `claude-agents-stats` | Show coordination statistics |
-| `claude-agents-cleanup` | Clean up old coordination data |
+| `claude-agents-log` | Recent agent activity (notes + commits) |
+| `claude-agents-active` | Agents active in last 24h |
+| `claude-agents-today` / `-yesterday` | Day-scoped activity |
+| `claude-agents-search <kw>` | Search events |
+| `claude-agents-stats` | Coordination statistics |
+| `claude-agents-status` | Combined overview: agents + open tasks |
+| `claude-agents-monitor` | Live tail of coordination notes |
+| `claude-agents-analyze` | Quick repo summary |
+
+### Tasks
+| Command | Description |
+|---------|-------------|
+| `claude-agents-tasks [open\|done\|mine\|all]` | List tasks |
+| `claude-agents-task-add <id> <desc> [deadline]` | Create task |
+| `claude-agents-assign <id> [deadline]` | Take ownership |
+| `claude-agents-task-done <id>` | Mark complete |
+
+### Messaging
+| Command | Description |
+|---------|-------------|
+| `claude-agents-broadcast <msg>` | All-agent message |
+| `claude-agents-dm <agent-id> <msg>` | Direct message |
+| `claude-agents-inbox` | Broadcasts + DMs to you |
+
+### Maintenance
+| Command | Description |
+|---------|-------------|
+| `claude-agents-cleanup` | Trim old coordination data |
 
 ## 🔍 Event Types Tracked
 

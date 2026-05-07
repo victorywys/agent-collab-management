@@ -138,6 +138,50 @@ agent-collab-management/
 | **🌐 Multi-Language** | Node.js, Python, Go, Rust support | Flexible development environments |
 | **🐚 Cross-Shell** | Bash, Zsh, Fish compatibility | Works in any development setup |
 
+> **Status note (May 2026):** _Real-time Coordination_, _Task Management_, and
+> _Team Communication_ are implemented today by the helpers below. _Conflict
+> Prevention_ currently logs file-edit events but does not yet enforce advisory
+> locks (Tier 2 work). _Automated Testing_ / _Quality Analytics_ run as a
+> Claude-driven skill, not a background daemon.
+
+## 🧰 Helper Commands (Reference)
+
+After `source .claude/agent-coordination-helpers.sh` (bash/zsh) or
+`source .claude/agent-coordination-helpers.fish` (fish):
+
+| Command | Purpose |
+|---|---|
+| `claude-agents-log` | Recent activity (notes + commits) |
+| `claude-agents-active` | Agents active in last 24h |
+| `claude-agents-today` / `-yesterday` | Day-scoped activity |
+| `claude-agents-search <kw>` | Grep across events |
+| `claude-agents-stats` | Event-type and per-agent counts |
+| `claude-agents-status` | Combined view: agents + open tasks |
+| `claude-agents-monitor` | Live tail of coordination notes |
+| `claude-agents-analyze` | Quick repo summary |
+| `claude-agents-tasks [open\|done\|mine\|all]` | List tasks |
+| `claude-agents-task-add <id> <desc> [deadline]` | Create task |
+| `claude-agents-assign <id> [deadline]` | Take ownership |
+| `claude-agents-task-done <id>` | Mark complete |
+| `claude-agents-broadcast <msg>` | All-agent message |
+| `claude-agents-dm <agent-id> <msg>` | Direct message |
+| `claude-agents-inbox` | Broadcasts + DMs to you |
+| `claude-agents-cleanup` | Trim old coordination data |
+
+Shared state lives in `.claude/coordination/` (`tasks.json`, `messages.log`)
+and is checked into git so all agents see the same truth. Per-host advisory
+locks live in `.claude/coordination/locks/` and are gitignored.
+
+## 🧪 Running the Test Suite
+
+```bash
+bash tests/test_coordination.sh
+```
+
+The suite spins up a throwaway git repo and exercises every helper end-to-end.
+It is the canonical check that the coordination layer still works after edits
+to `settings.json` or the helper scripts.
+
 ---
 
 ## 🎬 **See It In Action**
@@ -370,182 +414,3 @@ We welcome contributions! Whether it's new features, bug fixes, documentation im
 **Happy collaborative coding! 🤖✨**
 
 *Built with ❤️ for the Claude Code community*
-├── .claude/
-│   ├── settings.json                    # Core coordination configuration
-│   ├── agent-coordination-helpers.sh    # Bash/Zsh utility commands
-│   ├── agent-coordination-helpers.fish  # Fish shell utility commands
-│   ├── agent-coordination-universal.sh  # Universal shell detector
-│   └── COORDINATION.md                  # Detailed documentation
-├── README.md                           # This file
-├── .gitignore                          # Git ignore patterns
-└── DEMO.md                            # Simple demonstration
-```
-
-## 🐚 Shell Support
-
-The coordination system supports multiple shells:
-
-- **Bash** - Use `agent-coordination-helpers.sh`
-- **Zsh** - Use `agent-coordination-helpers.sh` (compatible)
-- **Fish** - Use `agent-coordination-helpers.fish`
-- **Universal** - Use `agent-coordination-universal.sh` (auto-detects)
-
-## 🔧 Core Features
-
-### Automatic Event Tracking
-- **Session Events**: Agent starts/stops working
-- **Git Operations**: Commits, pushes, merges, branch creation
-- **Task Management**: Task creation and completion
-- **File Operations**: File modification tracking
-
-### Coordination Commands
-- `claude-agents-log` - Recent agent activity
-- `claude-agents-active` - Currently active agents
-- `claude-agents-today` - Today's activity
-- `claude-agents-search <keyword>` - Search events
-- `claude-agents-stats` - Usage statistics
-
-### Git-Based Communication
-- Uses git notes for real-time event logging
-- Structured commit messages for persistent coordination
-- Branch-aware coordination
-- Shareable across team repositories
-
-## 🏗️ Architecture
-
-The system uses Claude Code's hook system to automatically log coordination events:
-
-```mermaid
-graph TD
-    A[Claude Agent] --> B[Claude Code Hooks]
-    B --> C[Git Notes]
-    B --> D[Git Commits]
-    C --> E[Real-time Events]
-    D --> F[Persistent Markers]
-    E --> G[Helper Commands]
-    F --> G
-    G --> H[Team Coordination]
-```
-
-## 📚 Documentation
-
-- **[COORDINATION.md](.claude/COORDINATION.md)** - Complete system documentation
-- **[settings.json](.claude/settings.json)** - Configuration reference
-- **[Helper Functions](.claude/agent-coordination-helpers.sh)** - Command reference
-
-## 🔧 Installation in Existing Projects
-
-### Option 1: Direct Integration
-```bash
-# Copy configuration files
-cp -r /path/to/agent-collab-management/.claude ./
-
-# Add to your .gitignore (optional)
-echo ".claude/settings.local.json" >> .gitignore
-```
-
-### Option 2: Submodule (Recommended for teams)
-```bash
-# Add as submodule
-git submodule add <this-repo-url> .agent-collab
-
-# Link configuration
-ln -sf .agent-collab/.claude ./
-
-# Source helpers in your shell profile
-echo "source ~/.agent-collab/.claude/agent-coordination-helpers.sh" >> ~/.bashrc
-```
-
-## 🤝 Team Setup
-
-1. **Commit the configuration**: The `.claude/settings.json` should be committed and shared
-2. **Share coordination data**: Use `git push/pull refs/notes/agent-coordination`
-3. **Establish conventions**: Agree on branch naming and coordination patterns
-4. **Train your team**: Everyone should source the helper functions
-
-## 🌐 Public Repository
-
-This repository is designed to be:
-- **Public and shareable** - Safe for open source projects
-- **Professional** - Clean, documented, and maintainable
-- **Reusable** - Easy to integrate into any project
-- **Extensible** - Customizable for specific team needs
-
-## 📖 Usage Examples
-
-### Basic Coordination Flow
-```bash
-# Agent 1 starts work
-SESSION_START | agent: claude-alice-laptop | timestamp: 2026-04-20T10:30:00
-
-# Agent 1 creates task and modifies files
-TASK_CREATED | agent: claude-alice-laptop | task: implement authentication
-FILE_MODIFY_START | agent: claude-alice-laptop | file: src/auth.js
-
-# Agent 2 joins and checks activity
-$ claude-agents-active
-👥 Active Agents (last 24 hours):
-   agent: claude-alice-laptop
-   agent: claude-bob-server
-
-# Agent 1 commits changes
-COMMIT_COMPLETE | agent: claude-alice-laptop | hash: abc123 | branch: feature-auth
-```
-
-### Searching for Specific Activity
-```bash
-$ claude-agents-search "auth"
-🔍 Searching agent events for: 'auth'
-   TASK_CREATED | agent: claude-alice-laptop | task: implement authentication
-   FILE_MODIFY_START | agent: claude-alice-laptop | file: src/auth.js
-```
-
-## 🛠️ Configuration
-
-The system is configured via `.claude/settings.json` with:
-- **Permissions**: Secure tool access controls
-- **Hooks**: Event-driven coordination triggers
-- **Environment**: Agent identification settings
-
-## 📊 Analytics and Insights
-
-The coordination system provides insights into:
-- Team productivity patterns
-- Code conflict avoidance
-- Task completion rates
-- Collaboration effectiveness
-
-## 🤖 Supported Claude Code Events
-
-- SessionStart/Stop
-- PreToolUse/PostToolUse
-- TaskCreated/TaskCompleted
-- Git operations (commit, push, merge, branch)
-- File modifications (Write/Edit)
-
-## 🎯 Use Cases
-
-- **Team Development**: Multiple developers with Claude agents
-- **Code Reviews**: Track agent-assisted review activities
-- **DevOps**: Coordinate deployment and maintenance tasks
-- **Open Source**: Enable community agent collaboration
-- **Education**: Track learning and development progress
-
-## 🔗 Related
-
-- **[agent-collab-demo](../agent-collab-demo)** - Working demonstration repository
-- **[Claude Code Documentation](https://docs.claude.ai/claude-code)** - Official Claude Code docs
-
-## 📜 License
-
-MIT License - Feel free to use in your projects!
-
-## 🤝 Contributing
-
-Contributions welcome! Please see our coordination guidelines and test your changes with the demo repository.
-
----
-
-**Happy collaborative coding! 🎉**
-
-For support, create an issue or check out the demo repository for working examples.

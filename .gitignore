@@ -1,9 +1,14 @@
 # Claude Code settings
 .claude/settings.local.json
 
+# Per-machine runtime state (advisory locks are host-specific)
+.claude/coordination/locks/
+
 # Common development ignores
 .env
 .env.local
 .DS_Store
 node_modules/
 *.log
+# ...but the shared message log IS tracked
+!.claude/coordination/messages.log

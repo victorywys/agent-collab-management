@@ -19,22 +19,23 @@ Transform individual Claude Code agents into a coordinated, high-performing deve
 
 ## ⚡ Quick Start
 
-### **New Projects**
+### **Any directory or repo**
 ```bash
-# Create collaborative repository with one command
-/create-agent-collab-repo my-project node github-username
-cd my-project
-source .claude/agent-coordination-helpers.sh
-```
-
-### **Existing Projects**
-```bash
-# Add collaboration to existing repository
-cd existing-project
-/add-agent-collab-to-existing
+# Plain dir, empty repo, or existing repo with code — one skill handles all three.
+cd <target>
+/init-agent-collab
 source .claude/agent-coordination-helpers.sh
 claude-agents-broadcast "Ready to collaborate!"
 ```
+
+For existing repos with code, the skill first reads a few key files
+(README, language manifest, recent git log), narrates back what it thinks
+the project is for, and asks you to confirm or correct before installing.
+The agreed-upon description is committed to `.claude/coordination/PROJECT.md`
+so future agents inherit the context.
+
+Anyone who later clones the repo gets the entire coordination layer for
+free — they do **not** re-run this skill, they just `source` the helper above.
 
 ### **Activate Testing Guardian**
 ```bash
@@ -114,8 +115,7 @@ graph TB
 agent-collab-management/
 ├── .claude/                              # Core coordination system
 │   ├── skills/                           # Claude Code skills
-│   │   ├── create-agent-collab-repo/     # New project creation
-│   │   ├── add-agent-collab-to-existing/ # Existing project integration
+│   │   ├── init-agent-collab/            # Initialize plain dir / empty repo / existing repo
 │   │   └── agent-tester-guardian/        # Quality assurance system
 │   ├── settings.json                     # Core coordination configuration
 │   ├── agent-coordination-helpers.sh     # Bash/Zsh utility commands
@@ -217,8 +217,9 @@ to `settings.json` or the helper scripts.
 
 **Scenario**: Three agents building a Node.js API
 
-1. **Alice** creates project: `/create-agent-collab-repo user-api node`
-2. **Bob** joins: `/add-agent-collab-to-existing`
+1. **Alice** initializes the repo: `cd user-api && /init-agent-collab`
+2. **Bob** clones and sources helpers — no skill needed:
+   `git clone … && cd user-api && source .claude/agent-coordination-helpers.sh`
 3. **Guardian** activates: `/agent-tester-guardian . strict false verbose`
 
 **Real-time Coordination**:
@@ -245,14 +246,11 @@ claude-agents-dm alice "I'll handle database while you do auth"
 ### **Method 1: Skills-Based Installation (Recommended)**
 
 ```bash
-# Install via Claude Code skills (one-time setup)
+# Install via Claude Code skills (one-time setup per repo)
 # Skills are automatically available after installation
 
-# For new projects:
-/create-agent-collab-repo project-name project-type
-
-# For existing projects:
-/add-agent-collab-to-existing
+# For any directory or repo (plain dir, empty repo, or repo with code):
+/init-agent-collab
 
 # For testing automation:
 /agent-tester-guardian
@@ -287,7 +285,7 @@ source .claude/agent-coordination-helpers.sh
 
 ### **🚀 Getting Started (5 minutes)**
 1. Read [Quick Start](#-quick-start) section above
-2. Try creating a test project with `/create-agent-collab-repo`
+2. Try initializing a throwaway dir with `/init-agent-collab`
 3. Explore basic commands: `claude-agents-status`, `claude-agents-log`
 
 ### **📚 Understanding the System (15 minutes)**
@@ -312,8 +310,8 @@ source .claude/agent-coordination-helpers.sh
 ### **For Team Leaders**
 
 ```bash
-# 1. Set up coordination foundation
-/create-agent-collab-repo team-project project-type github-org
+# 1. Set up coordination foundation (run from repo root)
+/init-agent-collab
 
 # 2. Configure testing standards
 /agent-tester-guardian . strict false verbose
@@ -333,12 +331,11 @@ echo "Team Protocols:
 ### **For Team Members**
 
 ```bash
-# 1. Join existing project
+# 1. Join existing project — the coordination layer comes with the clone.
 git clone team-project-repo
 cd team-project
-/add-agent-collab-to-existing
 
-# 2. Introduce yourself
+# 2. Source helpers and introduce yourself
 source .claude/agent-coordination-helpers.sh
 claude-agents-broadcast "Agent [your-name] joining! Ready to collaborate."
 
@@ -400,12 +397,9 @@ Teams using the Agent Collaboration System typically see:
 ## 🚀 **Get Started Now**
 
 ```bash
-# Create your first collaborative project
-/create-agent-collab-repo my-awesome-project node
-
-# Or add collaboration to existing project
-cd existing-project
-/add-agent-collab-to-existing
+# Initialize any directory or repo as collaborative
+cd my-project   # or: cd existing-project
+/init-agent-collab
 
 # Start collaborating!
 source .claude/agent-coordination-helpers.sh

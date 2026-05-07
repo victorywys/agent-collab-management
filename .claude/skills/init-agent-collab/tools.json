@@ -13,6 +13,7 @@
     {"name": "diff",     "command": "diff"},
     {"name": "mktemp",   "command": "mktemp"},
     {"name": "realpath", "command": "realpath"},
-    {"name": "date",     "command": "date"}
+    {"name": "date",     "command": "date"},
+    {"name": "ls",       "command": "ls"}
   ]
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/test_skill_add_to_existing.sh
+# tests/test_skill_init_agent_collab.sh
 #
 # 1. Verify skill assets/ matches the canonical .claude/ files.
 # 2. Simulate the skill's install procedure on a throwaway repo and assert
@@ -8,7 +8,7 @@
 set -uo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
-SKILL_DIR="$REPO_ROOT/.claude/skills/add-agent-collab-to-existing"
+SKILL_DIR="$REPO_ROOT/.claude/skills/init-agent-collab"
 ASSETS="$SKILL_DIR/assets"
 CANONICAL="$REPO_ROOT/.claude"
 
@@ -25,7 +25,7 @@ for f in COORDINATION.md settings.json agent-coordination-helpers.sh agent-coord
     if cmp -s "$ASSETS/$f" "$CANONICAL/$f"; then
         ok "$f matches canonical"
     else
-        bad "$f drifted from canonical (run: cp .claude/$f .claude/skills/add-agent-collab-to-existing/assets/$f)"
+        bad "$f drifted from canonical (run: cp .claude/$f .claude/skills/init-agent-collab/assets/$f)"
     fi
 done
 

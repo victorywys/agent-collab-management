@@ -1,0 +1,10 @@
+name: init-agent-collab
+description: Initialize a directory or existing repository for multi-agent Claude Code collaboration. Detects plain dir / empty repo / existing repo, analyzes the codebase to confirm understanding with the user, and installs the coordination layer (hooks, helpers, shared task/message state, advisory file locks, PROJECT.md context). Idempotent.
+triggers:
+  - "init agent collab"
+  - "set up agent collaboration"
+  - "make this repo collaborative"
+  - "initialize multi-agent coordination"
+  - "set up multi-agent coordination"
+  - "/init-agent-collab"
+parameters: []

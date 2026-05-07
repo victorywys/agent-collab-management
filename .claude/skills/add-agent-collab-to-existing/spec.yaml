@@ -1,9 +1,0 @@
-name: add-agent-collab-to-existing
-description: Install the multi-agent coordination layer (settings.json hooks, helpers, shared task/message state, advisory file locks) into an existing repository. Idempotent.
-triggers:
-  - "add agent collaboration to this repo"
-  - "add agent collab to existing"
-  - "install coordination layer"
-  - "set up multi-agent coordination"
-  - "retrofit agent collab"
-parameters: []
